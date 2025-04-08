@@ -8,17 +8,7 @@ import 'package:sadovod/View/splash_screen.dart';
 import 'package:sadovod/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/*
-   const firebaseConfig = {
-      apiKey: "AIzaSyADiJmvu2XZkqc282qxRYW0PCjlRv0kTFM",
-      authDomain: "sadovod-flutter.firebaseapp.com",
-      projectId: "sadovod-flutter",
-      storageBucket: "sadovod-flutter.appspot.com",
-      messagingSenderId: "817392840622",
-      appId: "1:817392840622:web:847158937fd62c6c97223f",
-      measurementId: "G-BV37CXKXT0"
-    };
- */
+
 /*
 надо попробовать использовать этот Widget для остановки в списке на определенном элементе
 https://pub.dev/packages/scrollable_positioned_list/example
