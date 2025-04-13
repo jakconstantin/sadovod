@@ -284,7 +284,7 @@ class _UsersPageState extends State<UsersPage> {
       _isChecked = item.containsKey('checked') ? item['checked'] : 0;
     } else {
       _nameUserController.text = '';
-      _percentUserController.text = '16';
+      _percentUserController.text = '20';
       _commentUserController.text = '';
       _isChecked = 0;
     }

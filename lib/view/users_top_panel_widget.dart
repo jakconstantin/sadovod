@@ -78,6 +78,13 @@ class _UsersTopPanelWidgetState extends State<UsersTopPanelWidget> {
     }
 
     try {
+
+      //final надо получить из date_purchase процент
+      final purchesResponse =  await supabase.
+           from('date_purchases').
+           select().
+           eq('id', widget._dateId);
+
       final usersResponse = await supabase
           .from('users')
           .select()
@@ -126,6 +133,8 @@ class _UsersTopPanelWidgetState extends State<UsersTopPanelWidget> {
       info.paidAmount = paidAmount;
       info.paidInFact = paidInFact;
       info.priceAll = Utils.roundDouble(priceAll, 2);
+      info.salaryBroker = Utils.roundDouble(((info.paidInFact + info.paidAmount)*purchesResponse.elementAt(0)['agentpercent'] )/100, 2);
+      info.ourIncome = Utils.roundDouble( ((info.paidInFact + info.paidAmount)* (20-purchesResponse.elementAt(0)['agentpercent']))/100 ,2);
       print('userInfo empty');
       _userInfo = info;
       return info;
@@ -161,8 +170,11 @@ class _UsersTopPanelWidgetState extends State<UsersTopPanelWidget> {
             Text("Количество заказов: ${info.orderCount}"),
             Text("Оплачено: ${info.paidAmount}"),
             Text("Оплачено по факту: ${info.paidInFact}"),
+            Text("Зарплата посредник: ${info.salaryBroker}"),
+            Text("Перевести посреднику: ${info.salaryBroker + info.paidInFact}"),
             Text("Итог: ${info.paidInFact + info.paidAmount}"),
             Text("Итог с %: ${info.priceAll}"),
+            Text("Наш доход: ${info.ourIncome}",style: const TextStyle(fontWeight: FontWeight.bold, ),),
           ],
         ),
       ],

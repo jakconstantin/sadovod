@@ -56,6 +56,21 @@ class UsersInfo
     }
   }
 
+  late double _salaryBroker = 0;
+  double get salaryBroker =>_salaryBroker;
+  void set salaryBroker(double value) {
+    if (value != null) {
+      _salaryBroker = value;
+    }
+  }
+
+  late double _ourIncome = 0;
+  double get ourIncome =>_ourIncome;
+  void set ourIncome(double value) {
+    if (value != null) {
+      _ourIncome = value;
+    }
+  }
 
 
   UsersInfo(this._price, this._userCount, this._orderCount);
