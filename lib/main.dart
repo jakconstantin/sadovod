@@ -19,7 +19,10 @@ Future<void> main() async {
   await Supabase.initialize(
     url: 'https://lixmqqrrbeooilttgkbl.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpeG1xcXJyYmVvb2lsdHRna2JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI2NzExNjYsImV4cCI6MjA1ODI0NzE2Nn0.T8oqCyR5SRuf5G9gFxTStMgrgBvf8r-xy3VJbz-c6H0',
-    debug: true,
+    //debug: true,
+    realtimeClientOptions: const RealtimeClientOptions(
+      timeout: Duration(seconds: 30), // Увеличиваем таймаут
+    ),
   );
 
   final themeStr = await rootBundle.loadString('assets/appainter_theme.json');
