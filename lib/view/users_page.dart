@@ -27,27 +27,88 @@ class UsersPage extends StatefulWidget {
   _UsersPageState createState() => _UsersPageState();
 }
 
-class _UsersPageState extends State<UsersPage> {
+class _UsersPageState extends State<UsersPage> with WidgetsBindingObserver {
   final supabase = SupabaseService().supabase;
   final TextEditingController _nameUserController = TextEditingController();
   final TextEditingController _percentUserController = TextEditingController();
   final TextEditingController _commentUserController = TextEditingController();
-
   int _isChecked = 0;
   int _initialScrollIndex = 0;
   final ItemScrollController itemScrollController = ItemScrollController();
-  List<Map<String, dynamic>> _localUsers = [];
-
+  RealtimeChannel? _channel;
+  bool _isSubscribed = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // Регистрируем наблюдатель
+    _subscribeToChannel();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    print('AppLifecycleState: $state');
+    if (state == AppLifecycleState.resumed) {
+      // Приложение вернулось в активный режим
+      if (!_isSubscribed) {
+        _subscribeToChannel();
+      }
+    } else if (state == AppLifecycleState.paused) {
+      // Приложение ушло в фоновый режим
+      _unsubscribeFromChannel();
+    }
+  }
 
+  void _subscribeToChannel() {
+    // Удаляем старую подписку, если она существует
+    _unsubscribeFromChannel();
+
+    // Создаем новый канал
+    _channel = supabase.channel('public:users');
+    _channel!.subscribe((status, [error]) async {
+      print('Subscription status: $status, error: $error');
+      if (status == RealtimeSubscribeStatus.subscribed) {
+        setState(() {
+          _isSubscribed = true;
+        });
+        print('Subscribed to users channel');
+      } else if (status == RealtimeSubscribeStatus.channelError) {
+        setState(() {
+          _isSubscribed = false;
+        });
+        print('Channel error: $error. Retrying in 5 seconds...');
+        await Future.delayed(Duration(seconds: 5));
+        if (mounted) {
+          _subscribeToChannel(); // Повторная попытка подписки
+        }
+      } else if (status == RealtimeSubscribeStatus.closed) {
+        setState(() {
+          _isSubscribed = false;
+        });
+        print('Channel closed. Attempting to reconnect...');
+        if (mounted) {
+          _subscribeToChannel();
+        }
+      }
+    });
+  }
+
+  void _unsubscribeFromChannel() {
+    if (_channel != null) {
+      supabase.removeChannel(_channel!);
+      _channel = null;
+      setState(() {
+        _isSubscribed = false;
+      });
+      print('Unsubscribed from channel');
+    }
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // Удаляем наблюдатель
+    _unsubscribeFromChannel();
     _nameUserController.dispose();
     _percentUserController.dispose();
     _commentUserController.dispose();
@@ -85,55 +146,35 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Widget _buildBody(BuildContext context) {
-    return StreamBuilder<Object?>(
+    return StreamBuilder<List<Map<String, dynamic>>>(
       stream: supabase
           .from('users')
           .stream(primaryKey: ['id'])
           .eq('dateId', widget._dateId)
           .order('dateCreate', ascending: false),
-      builder: (BuildContext context, AsyncSnapshot<Object?> snapshot) {
-
-        print('Происходят изменения или нет snapshot.hasData: ${snapshot.hasData}');
+      builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+        print('StreamBuilder snapshot.hasData: ${snapshot.hasData}, connectionState: ${snapshot.connectionState}');
 
         if (snapshot.hasError) {
-          print('Ошибка в StreamBuilder: ${snapshot.error}');
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(child: Text('Что-то пошло не так ${snapshot.error}')),
-            ],
+          print('StreamBuilder error: ${snapshot.error}, stackTrace: ${snapshot.stackTrace}');
+          return Center(
+            child: Text('Ошибка: ${snapshot.error}'),
           );
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(child: Text("Загрузка")),
-            ],
+          return Center(
+            child: CircularProgressIndicator(),
           );
         }
 
-        if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
             child: Text("Нет записей"),
           );
         }
 
-        List<Map<String, dynamic>> items;
-        try {
-          final rawData = snapshot.data as List<dynamic>;
-          items = rawData.map((item) {
-            final mapItem = item as Map;
-            return mapItem.map((key, value) => MapEntry(key.toString(), value));
-          }).toList();
-        } catch (e) {
-          print('Ошибка приведения типов: $e');
-          return Center(
-            child: Text('Ошибка обработки данных: $e'),
-          );
-        }
-
+        final items = snapshot.data!;
 
         return Column(
           children: [
